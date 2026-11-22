@@ -25,12 +25,14 @@ sectorData.forEach(key=>{const f=content.facilities[key];const card=document.cre
 
 // Organic mountain-excavated subterranean bunker complex (Mount Weather inspired)
 const facilityDescriptions={
- 'Sala de consejo':'Espacio de deliberación y toma de decisiones administrativas.','Archivo general':'Conserva documentación institucional y registros generales.','Puesto de vigilancia':'Supervisa los accesos y las condiciones de seguridad del complejo.','Zona de aislamiento':'Área restringida para procedimientos de aislamiento y observación.','Red de comunicaciones':'Gestiona los enlaces internos y las comunicaciones autorizadas.','Sala de reuniones':'Espacio destinado a reuniones de coordinación.','Centro de mando':'Coordina operaciones de seguridad y seguimiento de amenazas.','Laboratorio':'Instalación destinada a investigación y análisis.','Centro médico':'Atención, evaluación, tratamiento y seguimiento sanitario.','Servidores':'Aloja la infraestructura informática independiente.','Taller tecnológico':'Reparación, adaptación y mantenimiento de equipos.','Archivo':'Almacena documentación técnica y registros del sector.','Comedor':'Área de alimentación para el personal del sector.','Dormitorios':'Alojamiento residencial para habitantes del sector.','Invernadero':'Producción interna de vegetales y cultivos.','Área de evaluación y entrenamiento psicológico':'Espacio de evaluación y entrenamiento psicológico.','Oficina de Neuroelect':'Oficina vinculada a las actividades de Neuroelect.','Plaza central':'Punto de encuentro y circulación comunitaria.','Mercado':'Área de intercambio y distribución de productos.','Comedor comunitario':'Prepara y distribuye las comidas de los residentes.','Taller':'Reparación y elaboración de objetos de uso cotidiano.','Enfermería':'Atención primaria y seguimiento de necesidades sanitarias.','Zona creativa':'Espacio para actividades artísticas y recreativas.','Almacén':'Resguarda provisiones y materiales de uso común.','Sala común':'Lugar de descanso y convivencia entre residentes.','Bar':'Establecimiento recreativo y punto de encuentro.','Generación y distribución eléctrica':'Produce y distribuye energía a las instalaciones.','Tratamiento y almacenamiento de agua':'Procesa y conserva el suministro de agua.','Ventilación y climatización':'Renueva el aire y regula las condiciones ambientales.','Gestión de residuos':'Clasifica y procesa los residuos del asentamiento.','Mantenimiento técnico':'Da soporte a los sistemas e instalaciones.','Almacenes de servicio':'Conserva repuestos y materiales técnicos.','Conexiones verticales y corredores':'Conectan los distintos niveles y áreas del complejo.'
+ 'Sala de consejo':'Espacio de deliberación y toma de decisiones administrativas.','Archivo general':'Conserva documentación institucional y registros generales.','Puesto de vigilancia':'Supervisa los accesos y las condiciones de seguridad del complejo.','Zona de aislamiento':'Área restringida para procedimientos de aislamiento y observación.','Red de comunicaciones':'Gestiona los enlaces internos y las comunicaciones autorizadas.','Sala de reuniones':'Espacio destinado a reuniones de coordinación.','Centro de mando':'Coordina operaciones de seguridad y seguimiento de amenazas.','Laboratorio':'Instalación destinada a investigación y análisis.','Centro médico':'Atención, evaluación, tratamiento y seguimiento sanitario.','Servidores':'Aloja la infraestructura informática independiente.','Taller tecnológico':'Reparación, adaptación y mantenimiento de equipos.','Archivo':'Almacena documentación técnica y registros del sector.','Comedor':'Área de alimentación para el personal del sector.','Dormitorios':'Alojamiento residencial para habitantes del sector.','Invernadero':'Producción interna de vegetales y cultivos.','Área de evaluación y entrenamiento psicológico':'Espacio de evaluación y entrenamiento psicológico.','Oficina de Neuvillette':'Oficina vinculada a las actividades de Neuvillette.','Plaza central':'Punto de encuentro y circulación comunitaria.','Mercado':'Área de intercambio y distribución de productos.','Comedor comunitario':'Prepara y distribuye las comidas de los residentes.','Taller':'Reparación y elaboración de objetos de uso cotidiano.','Enfermería':'Atención primaria y seguimiento de necesidades sanitarias.','Zona creativa':'Espacio para actividades artísticas y recreativas.','Almacén':'Resguarda provisiones y materiales de uso común.','Sala común':'Lugar de descanso y convivencia entre residentes.','Bar':'Establecimiento recreativo y punto de encuentro.','Generación y distribución eléctrica':'Produce y distribuye energía a las instalaciones.','Tratamiento y almacenamiento de agua':'Procesa y conserva el suministro de agua.','Ventilación y climatización':'Renueva el aire y regula las condiciones ambientales.','Gestión de residuos':'Clasifica y procesa los residuos del asentamiento.','Mantenimiento técnico':'Da soporte a los sistemas e instalaciones.','Almacenes de servicio':'Conserva repuestos y materiales técnicos.','Conexiones verticales y corredores':'Conectan los distintos niveles y áreas del complejo.'
 };
 
 function createScene(canvas,compact=false){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
- renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.08;
  renderer.setClearColor(0x061319,0);
  renderer.outputColorSpace=THREE.SRGBColorSpace;
 
@@ -187,18 +189,28 @@ function createScene(canvas,compact=false){
  const innerWallMat=new THREE.MeshStandardMaterial({color:0x324d55,metalness:.5,roughness:.42,transparent:true,opacity:.88});
 
  // Helper to extrude an organic polygonal subterranean wing with holographic edge wireframe
- function createOrganicWing(pts2D, yPos, thickness=.24, edgeColor=cyan, edgeOpacity=.78){
+ function createOrganicWing(pts2D, yPos, thickness=.26, edgeColor=cyan, edgeOpacity=.72){
+  let pts=pts2D.map(p=>[p[0],p[1]]);
+  for(let iter=0;iter<2;iter++){
+   const next=[];
+   for(let i=0;i<pts.length;i++){
+    const a=pts[i], b=pts[(i+1)%pts.length];
+    next.push([a[0]*.75+b[0]*.25, a[1]*.75+b[1]*.25]);
+    next.push([a[0]*.25+b[0]*.75, a[1]*.25+b[1]*.75]);
+   }
+   pts=next;
+  }
   const shape=new THREE.Shape();
-  shape.moveTo(pts2D[0][0], pts2D[0][1]);
-  for(let i=1;i<pts2D.length;i++) shape.lineTo(pts2D[i][0], pts2D[i][1]);
+  shape.moveTo(pts[0][0], pts[0][1]);
+  for(let i=1;i<pts.length;i++) shape.lineTo(pts[i][0], pts[i][1]);
   shape.closePath();
 
-  const geo=new THREE.ExtrudeGeometry(shape,{depth:thickness,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.12,bevelThickness:.05});
+  const geo=new THREE.ExtrudeGeometry(shape,{depth:thickness,bevelEnabled:true,bevelSegments:4,steps:1,bevelSize:.18,bevelThickness:.08,curveSegments:24});
   geo.rotateX(Math.PI/2);
   const mesh=new THREE.Mesh(geo,slabMat);
   mesh.position.y=yPos;
 
-  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo,24),new THREE.LineBasicMaterial({color:edgeColor,transparent:true,opacity:edgeOpacity}));
+  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo,28),new THREE.LineBasicMaterial({color:edgeColor,transparent:true,opacity:edgeOpacity}));
   edges.position.y=yPos;
 
   const grp=new THREE.Group();
@@ -256,14 +268,14 @@ function createScene(canvas,compact=false){
   const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],p[1],p[2])));
   const mat=kind==='service'?serviceTunnelMat:(kind==='evac'?evacTunnelMat:tunnelMat);
   const lMat=kind==='service'?serviceLineMat:(kind==='evac'?evacLineMat:pulseLineMat);
-  const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,48,radius,8,false),mat);
-  const rail=new THREE.Mesh(new THREE.TubeGeometry(curve,48,.019,5,false),lMat);
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,64,radius,14,false),mat);
+  const rail=new THREE.Mesh(new THREE.TubeGeometry(curve,64,.018,8,false),lMat);
   sub.add(tube,rail);
-  // Structural rib rings / blast bulkheads along tunnel
-  [0.2,0.5,0.8].forEach(t=>{
+  [0.02,0.25,0.5,0.75,0.98].forEach((t,idx)=>{
    const pos=curve.getPoint(t);
    const tan=curve.getTangent(t);
-   const rib=new THREE.Mesh(new THREE.TorusGeometry(radius*1.12,.022,6,16),lMat);
+   const isEnd=(idx===0||idx===4);
+   const rib=new THREE.Mesh(new THREE.TorusGeometry(radius*(isEnd?1.18:1.1),.02,8,22),lMat);
    rib.position.copy(pos);
    rib.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),tan);
    sub.add(rib);
@@ -497,6 +509,9 @@ function createScene(canvas,compact=false){
  });
  // 5. ARCHITECTURAL CHAMBERS & INTERACTIVE FACILITY PODS (VARIED SHAPES: OCTAGONAL HUBS, BAYS, DOMES)
  const facilityRecords=[];
+ const hitTargets=[];
+ const hitSphereGeo=new THREE.SphereGeometry(.62,12,10);
+ const hitSphereMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
  const sectorSpecs=[
   {key:'elysium',name:'ELYSIUM',color:0x8bd9d2,items:content.facilities.elysium.items},
   {key:'sanctum',name:'SANCTUM',color:0x83dbe8,items:content.facilities.sanctum.items},
@@ -504,90 +519,37 @@ function createScene(canvas,compact=false){
   {key:'shared',name:'INFRAESTRUCTURA COMPARTIDA',color:0x9bb7f0,items:content.facilities.shared.items}
  ];
 
- // Carefully spaced organic coordinates across all 5 subterranean levels & lateral wings
  const placements=[
-  // Deck 0 (Y=3.8): ELYSIUM Administration & Intake
   {y:3.8, sector:0, coords:[
    [-7.5,-4.2,'hub'], [-2.2,-5.2,'bay'], [4.2,-4.6,'bay'],
    [14.2,-3.2,'hub'], [-7.8,2.2,'bay'], [-1.8,3.2,'bay']
   ]},
-  // Deck 1 (Y=0.8): SANCTUM Security, Command, Labs & Neuroelect
   {y:0.8, sector:1, coords:[
    [-10.2,-5.5,'hub'], [-4.5,-6.2,'bay'], [1.5,-6.0,'bay'], [7.8,-5.2,'hub'],
    [-19.2,-1.2,'hub'], [-18.5,3.2,'bay'], [-9.5,3.5,'bay'], [-3.2,4.0,'bay'],
    [3.5,4.2,'bay'], [9.8,3.5,'hub'], [11.5,-1.5,'bay']
   ]},
-  // Deck 2 (Y=-2.3): THE SHELTER Community Plaza, Market, Habitat & Bar
   {y:-2.3, sector:2, coords:[
    [-10.5,-5.0,'hub'], [-4.8,-5.8,'bay'], [1.2,-5.8,'bay'], [7.5,-5.0,'hub'],
    [19.2,-1.2,'hub'], [18.8,3.2,'bay'], [-9.8,3.8,'bay'], [-3.5,4.6,'hub'],
    [3.2,4.8,'bay'], [9.5,3.8,'bay'], [11.8,-0.8,'bay']
   ]},
-  // Deck 3 (Y=-5.4): INFRAESTRUCTURA COMPARTIDA (Power, Water, HVAC, Waste)
   {y:-5.4, sector:3, coords:[
    [-8.5,-3.6,'hub'], [-2.2,-4.4,'bay'], [4.5,-4.0,'bay'], [8.8,1.5,'hub']
   ]},
-  // Deck 4 (Y=-8.2): INFRAESTRUCTURA COMPARTIDA (Maintenance, Service Vaults, Vertical Corridors)
   {y:-8.2, sector:3, coords:[
    [-5.8,-1.8,'hub'], [0.8,-2.6,'bay'], [6.5,1.2,'hub']
   ]}
  ];
 
- const orbGeo=new THREE.SphereGeometry(.12,14,10);
- const haloGeo=new THREE.TorusGeometry(.25,.014,6,28);
- const stemGeo=new THREE.CylinderGeometry(.01,.01,.26,6);
+ const orbGeo=new THREE.SphereGeometry(.14,18,14);
+ const haloGeo=new THREE.TorusGeometry(.28,.016,8,32);
+ const stemGeo=new THREE.CylinderGeometry(.012,.012,.28,8);
 
  function buildChamber(sector, item, idx, x, z, y, shapeType){
   const pod=new THREE.Group();
-  pod.position.set(x,y+.05,z);
+  pod.position.set(x,y+.02,z);
   sub.add(pod);
-
-  if(shapeType==='hub'){
-   // Octagonal command/plaza chamber
-   const r=1.55;
-   const base=new THREE.Mesh(new THREE.CylinderGeometry(r,r*1.04,.14,8),slabMat);
-   base.position.y=.07;
-   pod.add(base);
-   const ring=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(r,r,.78,8,1,true)),new THREE.LineBasicMaterial({color:sector.color,transparent:true,opacity:.78}));
-   ring.position.y=.46;
-   pod.add(ring);
-   const core=new THREE.Mesh(new THREE.CylinderGeometry(.42,.48,.34,8),innerWallMat);
-   core.position.y=.28;
-   pod.add(core);
-  } else {
-   // Chamfered architectural bay with recessed bulkhead walls
-   const w=2.55, d=1.95;
-   const base=new THREE.Mesh(new THREE.BoxGeometry(w,.12,d),slabMat);
-   base.position.y=.06;
-   pod.add(base);
-   const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w,.12,d)),new THREE.LineBasicMaterial({color:sector.color,transparent:true,opacity:.82}));
-   edges.position.y=.06;
-   pod.add(edges);
-
-   const back=new THREE.Mesh(new THREE.BoxGeometry(w,.7,.1),innerWallMat);
-   back.position.set(0,.44,-d/2);
-   const left=new THREE.Mesh(new THREE.BoxGeometry(.1,.7,d),innerWallMat);
-   left.position.set(-w/2,.44,0);
-   const right=new THREE.Mesh(new THREE.BoxGeometry(.1,.7,d),innerWallMat);
-   right.position.set(w/2,.44,0);
-   pod.add(back,left,right);
-
-   const consoleBox=new THREE.Mesh(new THREE.BoxGeometry(.75,.28,.42),rockRimMat);
-   consoleBox.position.set(-.35,.26,-.22);
-   pod.add(consoleBox);
-  }
-
-  // Interactive holographic beacon
-  const beacon=new THREE.Group();
-  beacon.position.set(0,1.15,0);
-  pod.add(beacon);
-
-  const orb=new THREE.Mesh(orbGeo,new THREE.MeshBasicMaterial({color:sector.color}));
-  const halo=new THREE.Mesh(haloGeo,new THREE.MeshBasicMaterial({color:sector.color,transparent:true,opacity:.9}));
-  halo.rotation.x=Math.PI/2;
-  const stem=new THREE.Mesh(stemGeo,new THREE.MeshBasicMaterial({color:sector.color,transparent:true,opacity:.68}));
-  stem.position.y=-.18;
-  beacon.add(orb,halo,stem);
 
   const data={
    key:sector.key,
@@ -597,10 +559,67 @@ function createScene(canvas,compact=false){
    id:`${sector.key.toUpperCase()} / ${(idx+1).toString().padStart(2,'0')}`,
    color:sector.color
   };
-  beacon.userData={facility:data};
-  orb.userData={facility:data};
-  halo.userData={facility:data};
-  facilityRecords.push({beacon,data});
+
+  if(shapeType==='hub'){
+   const r=1.55;
+   const plinth=new THREE.Mesh(new THREE.CylinderGeometry(r*1.08,r*1.16,.1,24),slabMat);
+   plinth.position.y=.05;
+   const base=new THREE.Mesh(new THREE.CylinderGeometry(r,r*1.04,.16,16),slabMat);
+   base.position.y=.12;
+   pod.add(plinth,base);
+   const ring=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(r,r,.74,16,1,true)),new THREE.LineBasicMaterial({color:sector.color,transparent:true,opacity:.72}));
+   ring.position.y=.5;
+   pod.add(ring);
+   const topCollar=new THREE.Mesh(new THREE.TorusGeometry(r,.018,8,32),new THREE.MeshBasicMaterial({color:sector.color,transparent:true,opacity:.65}));
+   topCollar.rotation.x=Math.PI/2;
+   topCollar.position.y=.87;
+   pod.add(topCollar);
+   const core=new THREE.Mesh(new THREE.CylinderGeometry(.42,.5,.34,16),innerWallMat);
+   core.position.y=.32;
+   pod.add(core);
+  } else {
+   const w=2.5, d=1.9;
+   const plinth=new THREE.Mesh(new THREE.CylinderGeometry(1.52,1.62,.1,8),slabMat);
+   plinth.rotation.y=Math.PI/8;
+   plinth.position.y=.05;
+   pod.add(plinth);
+
+   const base=new THREE.Mesh(new THREE.BoxGeometry(w,.14,d),slabMat);
+   base.position.y=.12;
+   pod.add(base);
+   const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w,.14,d)),new THREE.LineBasicMaterial({color:sector.color,transparent:true,opacity:.76}));
+   edges.position.y=.12;
+   pod.add(edges);
+
+   const back=new THREE.Mesh(new THREE.BoxGeometry(w,.66,.1),innerWallMat);
+   back.position.set(0,.48,-d/2);
+   const left=new THREE.Mesh(new THREE.BoxGeometry(.1,.66,d),innerWallMat);
+   left.position.set(-w/2,.48,0);
+   const right=new THREE.Mesh(new THREE.BoxGeometry(.1,.66,d),innerWallMat);
+   right.position.set(w/2,.48,0);
+   pod.add(back,left,right);
+
+   const consoleBox=new THREE.Mesh(new THREE.BoxGeometry(.75,.28,.42),rockRimMat);
+   consoleBox.position.set(-.35,.31,-.22);
+   pod.add(consoleBox);
+  }
+
+  const beacon=new THREE.Group();
+  beacon.position.set(0,1.18,0);
+  pod.add(beacon);
+
+  const orb=new THREE.Mesh(orbGeo,new THREE.MeshBasicMaterial({color:sector.color}));
+  const halo=new THREE.Mesh(haloGeo,new THREE.MeshBasicMaterial({color:sector.color,transparent:true,opacity:.9}));
+  halo.rotation.x=Math.PI/2;
+  const stem=new THREE.Mesh(stemGeo,new THREE.MeshBasicMaterial({color:sector.color,transparent:true,opacity:.68}));
+  stem.position.y=-.18;
+  const hitSphere=new THREE.Mesh(hitSphereGeo,hitSphereMat);
+  beacon.add(orb,halo,stem,hitSphere);
+
+  [beacon,orb,halo,hitSphere].forEach(obj=>{obj.userData={facility:data}});
+  pod.traverse(child=>{if(child.isMesh && !child.userData?.facility) child.userData={facility:data};});
+  hitTargets.push(hitSphere,orb,halo);
+  facilityRecords.push({beacon,orb,halo,data});
   return pod;
  }
 
@@ -616,17 +635,17 @@ function createScene(canvas,compact=false){
  const scan=new THREE.Group();
  world.add(scan);
  for(let i=0;i<5;i++){
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(17.5+i*.75,.014,4,128),new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.14-i*.016}));
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(17.5+i*.75,.014,6,144),new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.14-i*.016}));
   ring.rotation.x=Math.PI/2;
   ring.position.y=baseY-.45-i*.05;
   scan.add(ring);
  }
- const deepRing=new THREE.Mesh(new THREE.TorusGeometry(16.5,.016,4,128),new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.14}));
+ const deepRing=new THREE.Mesh(new THREE.TorusGeometry(16.5,.016,6,144),new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.14}));
  deepRing.rotation.x=Math.PI/2;
  deepRing.position.y=-8.4;
  scan.add(deepRing);
 
- // Popover & Raycasting
+ // Popover & Raycasting (direct hitTargets priority -> guaranteed response on every point!)
  const frame=canvas.closest('.scene-frame');
  let popup=frame.querySelector('.facility-popup');
  if(!popup){
@@ -657,24 +676,41 @@ function createScene(canvas,compact=false){
   updatePopup();
   if(typeof showInfo==='function')showInfo(data.key,data.name,data);
  }
- function choose(ev){
+ function pickFacility(ev){
   const rect=canvas.getBoundingClientRect();
   pointer.x=((ev.clientX-rect.left)/rect.width)*2-1;
   pointer.y=-((ev.clientY-rect.top)/rect.height)*2+1;
   raycaster.setFromCamera(pointer,camera);
-  const hits=raycaster.intersectObjects(world.children,true);
-  const hit=hits.find(h=>h.object.userData?.facility);
-  if(hit){
-   const data=hit.object.userData.facility;
-   const rec=facilityRecords.find(r=>r.data===data)||facilityRecords.find(r=>r.data.name===data.name);
-   selectFacility(data,rec?.beacon||hit.object.parent);
+  const beaconHits=raycaster.intersectObjects(hitTargets,false);
+  if(beaconHits.length){
+   const data=beaconHits[0].object.userData.facility;
+   const rec=facilityRecords.find(r=>r.data===data);
+   return {data,beacon:rec?.beacon||beaconHits[0].object.parent};
+  }
+  const podHits=raycaster.intersectObjects(sub.children,true).find(h=>h.object.userData?.facility);
+  if(podHits){
+   const data=podHits.object.userData.facility;
+   const rec=facilityRecords.find(r=>r.data===data);
+   return {data,beacon:rec?.beacon||podHits.object.parent};
+  }
+  return null;
+ }
+ function choose(ev){
+  const found=pickFacility(ev);
+  if(found){
+   selectFacility(found.data,found.beacon);
   } else {
    popup.classList.remove('visible');
   }
  }
  let down=null;
  canvas.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY}});
- canvas.addEventListener('pointerup',e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<7)choose(e);down=null});
+ canvas.addEventListener('pointermove',e=>{
+  if(down)return;
+  const found=pickFacility(e);
+  canvas.style.cursor=found?'pointer':'grab';
+ });
+ canvas.addEventListener('pointerup',e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<9)choose(e);down=null});
 
  function resize(){
   const w=canvas.clientWidth||1, h=canvas.clientHeight||1;
