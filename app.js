@@ -244,49 +244,154 @@ function createScene(canvas,compact=false){
   [-8.5,-4.8],[0,-6.2],[9,-4.5],[10.5,2.2],[4,5.5],[-6,4.8],[-9.5,-0.5]
  ], -8.2, .22, 0x7ba4e3, .72);
 
- // 3. CURVED TUNNELS, BLAST CORRIDORS & INCLINED ACCESS RAMPS
+ // 3. CURVED TUNNELS, SERVICE CORRIDORS, BLAST AIRLOCKS & MULTIPLE SURFACE EXITS
  const tunnelMat=new THREE.MeshStandardMaterial({color:0x365c63,metalness:.58,roughness:.38,transparent:true,opacity:.52});
+ const serviceTunnelMat=new THREE.MeshStandardMaterial({color:0x4b4238,metalness:.62,roughness:.44,transparent:true,opacity:.58});
+ const evacTunnelMat=new THREE.MeshStandardMaterial({color:0x2b4e4c,metalness:.52,roughness:.36,transparent:true,opacity:.54});
  const pulseLineMat=new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.8});
+ const serviceLineMat=new THREE.MeshBasicMaterial({color:0xe2b979,transparent:true,opacity:.78});
+ const evacLineMat=new THREE.MeshBasicMaterial({color:0x7ee6b8,transparent:true,opacity:.82});
 
- function buildTunnel(pts, radius=.24){
+ function buildTunnel(pts, radius=.24, kind='main'){
   const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],p[1],p[2])));
-  const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,48,radius,8,false),tunnelMat);
-  const rail=new THREE.Mesh(new THREE.TubeGeometry(curve,48,.02,5,false),pulseLineMat);
+  const mat=kind==='service'?serviceTunnelMat:(kind==='evac'?evacTunnelMat:tunnelMat);
+  const lMat=kind==='service'?serviceLineMat:(kind==='evac'?evacLineMat:pulseLineMat);
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,48,radius,8,false),mat);
+  const rail=new THREE.Mesh(new THREE.TubeGeometry(curve,48,.019,5,false),lMat);
   sub.add(tube,rail);
-  // Structural rib rings along tunnel
+  // Structural rib rings / blast bulkheads along tunnel
   [0.2,0.5,0.8].forEach(t=>{
    const pos=curve.getPoint(t);
    const tan=curve.getTangent(t);
-   const rib=new THREE.Mesh(new THREE.TorusGeometry(radius*1.12,.022,6,16),pulseLineMat);
+   const rib=new THREE.Mesh(new THREE.TorusGeometry(radius*1.12,.022,6,16),lMat);
    rib.position.copy(pos);
    rib.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),tan);
    sub.add(rib);
   });
  }
 
- // Inclined entry tunnel from the mountain blast portal down into Level 0 Intake!
- buildTunnel([[px,py+.15,pz],[2.0,6.2,3.5],[1.2,4.8,0.5],[0,4.05,-2.5]], .36);
- // Sloped vehicle/cargo ramp connecting Level 0 -> Level -1 -> Level -2
- buildTunnel([[-10.5,4.0,-3.5],[-12.8,2.4,-2.0],[-11.5,1.0,1.5]], .28);
- buildTunnel([[11.5,1.0,-2.0],[13.5,-0.6,0.5],[11.5,-2.1,3.2]], .28);
- // Lateral wing connector tunnels
- buildTunnel([[10.2,3.95,-3.2],[14.2,3.85,-3.2]], .26);
- buildTunnel([[-13.5,0.95,0.2],[-18.2,0.85,0.2]], .26);
- buildTunnel([[14.2,-2.15,0.4],[18.8,-2.25,0.4]], .26);
- // Internal organic curved arteries on each floor
- buildTunnel([[-9.5,4.02,-4.5],[-3.0,4.02,-5.5],[4.5,4.02,-4.8],[9.5,4.02,-1.5]], .19);
- buildTunnel([[-12.5,1.02,-5.5],[-4.0,1.02,-6.2],[5.5,1.02,-5.5],[12.5,1.02,0.5]], .21);
- buildTunnel([[-11.5,1.02,3.5],[-2.5,1.02,4.2],[7.5,1.02,3.8]], .18);
- buildTunnel([[-12.5,-2.08,-5.2],[-2.0,-2.08,-6.0],[8.5,-2.08,-4.8],[13.2,-2.08,2.5]], .21);
- buildTunnel([[-11.5,-2.08,4.0],[0,-2.08,5.2],[10.5,-2.08,4.2]], .19);
- buildTunnel([[-9.5,-5.18,-3.5],[0,-5.18,-4.5],[9.5,-5.18,-1.5]], .19);
- buildTunnel([[-6.5,-7.98,-2.0],[0,-7.98,-2.8],[7.5,-7.98,-1.0]], .18);
+ // Helper for restricted blast-door airlock gates between sectors and service corridors
+ const bulkheadMat=new THREE.MeshStandardMaterial({color:0x24373c,metalness:.72,roughness:.35});
+ function buildBlastBulkhead(x,y,z,rotY=0,isRestricted=true){
+  const gate=new THREE.Group();
+  gate.position.set(x,y,z);
+  gate.rotation.y=rotY;
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(.95,.72,.22),bulkheadMat);
+  frame.position.y=.36;
+  const trim=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(.98,.75,.25)),new THREE.LineBasicMaterial({color:isRestricted?0xe2b979:cyan,transparent:true,opacity:.88}));
+  trim.position.y=.36;
+  gate.add(frame,trim);
+  sub.add(gate);
+ }
 
- // 4. CENTRAL & SECONDARY VERTICAL ELEVATOR SHAFTS + EXHAUST VENTILATION CHIMNEYS
+ // A. PRIMARY & SECONDARY SURFACE ACCESSES + CAMOUFLAGED FOREST EMERGENCY EXITS
+ // 1) Main Mountain Blast Portal (existing front-south intake)
+ buildTunnel([[px,py+.15,pz],[2.0,6.2,3.5],[1.2,4.8,0.5],[0,4.05,-2.5]], .36, 'main');
+
+ // 2) Camouflaged Forest Emergency Hatch — West Woods (Sanctum escape route)
+ const exW_x=-15.8, exW_z=7.4, exW_y=baseY+mountainHeight(exW_x,exW_z);
+ buildTunnel([[-13.5,1.02,4.2],[-15.2,3.8,6.2],[exW_x,exW_y-.05,exW_z]], .23, 'evac');
+
+ // 3) Camouflaged Forest Emergency Hatch — East Pine Ravine (The Shelter escape route)
+ const exE_x=16.6, exE_z=7.2, exE_y=baseY+mountainHeight(exE_x,exE_z);
+ buildTunnel([[13.5,-2.08,4.0],[15.8,2.5,6.0],[exE_x,exE_y-.05,exE_z]], .23, 'evac');
+
+ // 4) Concealed North Ridge Supply & Service Tunnel (Restricted logistics access, bypasses living quarters)
+ const supN_x=-11.8, supN_z=-12.2, supN_y=baseY+mountainHeight(supN_x,supN_z);
+ buildTunnel([[-10.5,4.0,-6.2],[-11.4,6.4,-9.6],[supN_x,supN_y-.05,supN_z]], .28, 'service');
+
+ // 5) Hidden Northeast Emergency Extraction Tunnel from Level -1/-2 Perimeter
+ const exNE_x=15.4, exNE_z=-11.4, exNE_y=baseY+mountainHeight(exNE_x,exNE_z);
+ buildTunnel([[13.2,1.02,-5.5],[14.8,4.6,-8.8],[exNE_x,exNE_y-.05,exNE_z]], .22, 'evac');
+
+ // Render camouflaged surface hatches & mossy rock/foliage cover in the forest
+ [
+  {x:exW_x, y:exW_y, z:exW_z, kind:'evac', rot:.45},
+  {x:exE_x, y:exE_y, z:exE_z, kind:'evac', rot:-.55},
+  {x:supN_x, y:supN_y, z:supN_z, kind:'service', rot:.2},
+  {x:exNE_x, y:exNE_y, z:exNE_z, kind:'evac', rot:-.3}
+ ].forEach(h=>{
+  const hatchGrp=new THREE.Group();
+  hatchGrp.position.set(h.x,h.y+.04,h.z);
+  hatchGrp.rotation.y=h.rot;
+  // Low mossy rock-toned hatch lid blended into terrain
+  const baseCol=h.kind==='service'?0x3d4338:0x2d473a;
+  const rimCol=h.kind==='service'?0xe2b979:0x7ee6b8;
+  const casing=new THREE.Mesh(new THREE.CylinderGeometry(.55,.68,.24,8),new THREE.MeshStandardMaterial({color:baseCol,roughness:.92,metalness:.35}));
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.56,.018,6,16),new THREE.MeshBasicMaterial({color:rimCol,transparent:true,opacity:.72}));
+  ring.rotation.x=Math.PI/2;
+  ring.position.y=.13;
+  // Camouflage foliage shrubs & boulders around hatch rim
+  const shrubMat=new THREE.MeshStandardMaterial({color:0x294a39,roughness:.96});
+  for(let k=0;k<5;k++){
+   const ang=(k/5)*Math.PI*2+.3;
+   const shrub=new THREE.Mesh(new THREE.DodecahedronGeometry(.34+((k%2)*.12),0),shrubMat);
+   shrub.scale.set(1.2,.68,1.1);
+   shrub.position.set(Math.cos(ang)*.64,.12,Math.sin(ang)*.64);
+   hatchGrp.add(shrub);
+  }
+  hatchGrp.add(casing,ring);
+  surface.add(hatchGrp);
+ });
+
+ // B. EXPANDED MULTI-ROUTE CORRIDOR NETWORK (CONNECTING EVERY CHAMBER & SECTOR WITHOUT BOTTLENECKS)
+ // Sloped cargo/service ramps connecting decks
+ buildTunnel([[-10.5,4.0,-3.5],[-12.8,2.4,-2.0],[-11.5,1.0,1.5]], .26, 'service');
+ buildTunnel([[11.5,1.0,-2.0],[13.5,-0.6,0.5],[11.5,-2.1,3.2]], .26, 'service');
+ buildTunnel([[-9.8,-2.1,-3.2],[-11.6,-3.8,-1.5],[-9.2,-5.25,-2.5]], .24, 'service');
+ buildTunnel([[8.2,-5.25,-1.5],[9.6,-6.7,-0.2],[7.2,-8.05,0.8]], .23, 'service');
+
+ // Lateral wing connector tunnels (dual parallel links so wings are never dead-ends)
+ buildTunnel([[10.2,3.95,-3.2],[14.2,3.85,-3.2]], .24, 'main');
+ buildTunnel([[9.5,3.95,-1.5],[14.2,3.85,-3.2]], .17, 'service');
+ buildTunnel([[-13.5,0.95,-1.2],[-19.2,0.85,-1.2]], .24, 'main');
+ buildTunnel([[-13.5,0.95,3.2],[-18.5,0.85,3.2]], .19, 'main');
+ buildTunnel([[14.2,-2.15,-1.2],[19.2,-2.25,-1.2]], .24, 'main');
+ buildTunnel([[13.8,-2.15,3.2],[18.8,-2.25,3.2]], .19, 'main');
+
+ // Deck 0 (Y=4.02): Full perimeter ring + cross-links connecting all 6 ELYSIUM admin & intake rooms
+ buildTunnel([[-9.5,4.02,-4.5],[-3.0,4.02,-5.5],[4.5,4.02,-4.8],[9.5,4.02,-1.5]], .19, 'main');
+ buildTunnel([[-7.5,4.02,-4.2],[-7.8,4.02,2.2],[-1.8,4.02,3.2],[4.2,4.02,-4.6]], .18, 'main');
+ buildTunnel([[-2.2,4.02,-5.2],[-1.8,4.02,3.2]], .16, 'main');
+ buildTunnel([[-10.5,4.02,-6.0],[-7.5,4.02,-4.2]], .16, 'service'); // Restricted supply bypass
+
+ // Deck 1 (Y=1.02): SANCTUM dual north/south galleries + west/east cross-corridors + restricted perimeter service loop
+ buildTunnel([[-12.5,1.02,-5.5],[-4.5,1.02,-6.2],[1.5,1.02,-6.0],[7.8,1.02,-5.2],[11.5,1.02,-1.5]], .20, 'main');
+ buildTunnel([[-11.5,1.02,3.5],[-3.2,1.02,4.0],[3.5,1.02,4.2],[9.8,1.02,3.5],[11.5,1.02,-1.5]], .19, 'main');
+ buildTunnel([[-10.2,1.02,-5.5],[-9.5,1.02,3.5]], .17, 'main');
+ buildTunnel([[-4.5,1.02,-6.2],[-3.2,1.02,4.0]], .16, 'main');
+ buildTunnel([[7.8,1.02,-5.2],[9.8,1.02,3.5]], .17, 'main');
+ buildTunnel([[-19.2,1.02,-1.2],[-18.5,1.02,3.2],[-13.5,1.02,4.2]], .17, 'evac');
+ // Restricted Sanctum Tactical Perimeter Corridor
+ buildTunnel([[-12.8,1.02,-6.8],[0,1.02,-7.6],[13.2,1.02,-5.5]], .15, 'service');
+
+ // Deck 2 (Y=-2.08): THE SHELTER interconnected residential/community loop + service corridor
+ buildTunnel([[-12.5,-2.08,-5.2],[-4.8,-2.08,-5.8],[1.2,-2.08,-5.8],[7.5,-2.08,-5.0],[11.8,-2.08,-0.8]], .20, 'main');
+ buildTunnel([[-11.5,-2.08,3.8],[-3.5,-2.08,4.6],[3.2,-2.08,4.8],[9.5,-2.08,3.8],[11.8,-2.08,-0.8]], .19, 'main');
+ buildTunnel([[-10.5,-2.08,-5.0],[-9.8,-2.08,3.8]], .17, 'main');
+ buildTunnel([[-4.8,-2.08,-5.8],[-3.5,-2.08,4.6]], .16, 'main');
+ buildTunnel([[7.5,-2.08,-5.0],[9.5,-2.08,3.8]], .17, 'main');
+ buildTunnel([[19.2,-2.08,-1.2],[18.8,-2.08,3.2],[13.5,-2.08,4.0]], .17, 'evac');
+ // Separate Back-of-House Logistics Corridor (keeps supply haulage away from living quarters)
+ buildTunnel([[-13.2,-2.08,-6.6],[0,-2.08,-7.5],[13.5,-2.08,-5.8]], .15, 'service');
+
+ // Deck 3 (Y=-5.18) & Deck 4 (Y=-7.98): Full ring circuits connecting all engineering & aquifer chambers
+ buildTunnel([[-9.5,-5.18,-3.5],[-2.2,-5.18,-4.4],[4.5,-5.18,-4.0],[8.8,-5.18,1.5],[2.5,-5.18,4.8],[-6.5,-5.18,4.2],[-9.5,-5.18,-3.5]], .18, 'service');
+ buildTunnel([[-6.5,-7.98,-2.0],[0.8,-7.98,-2.6],[6.5,-7.98,1.2],[1.5,-7.98,3.8],[-5.5,-7.98,2.8],[-6.5,-7.98,-2.0]], .17, 'service');
+
+ // Security Blast-Door Checkpoints at restricted junctions & sector transitions
+ buildBlastBulkhead(-10.2, 3.85, -5.6, .35, true);
+ buildBlastBulkhead(11.6, 3.85, -3.2, Math.PI/2, true);
+ buildBlastBulkhead(-15.5, 0.85, -1.2, Math.PI/2, true);
+ buildBlastBulkhead(11.8, 0.85, -4.8, -.4, true);
+ buildBlastBulkhead(15.8, -2.25, -1.2, Math.PI/2, false);
+ buildBlastBulkhead(-11.8, -2.25, -6.2, .25, true);
+
+ // 4. SINGLE CENTRAL ELEVATOR CORE + MULTI-SECTOR STAIRWELLS & VENTILATION SHAFTS
  const shaftGlass=new THREE.MeshPhysicalMaterial({color:0x69cbd1,metalness:.45,roughness:.18,transparent:true,opacity:.18,transmission:.2});
  const shaftWire=new THREE.MeshBasicMaterial({color:cyan,wireframe:true,transparent:true,opacity:.36});
 
- // Main Central High-Speed Elevator Core (Mount Weather style central shaft)
+ // SINGLE Main Central High-Speed Elevator Core (the sole elevator shaft in the complex)
  const mainShaft=new THREE.Group();
  const mhTotal=15.8, mhCenter=-0.4;
  const mainOuter=new THREE.Mesh(new THREE.CylinderGeometry(.92,.92,mhTotal,16,1,true),shaftGlass);
@@ -295,7 +400,6 @@ function createScene(canvas,compact=false){
  const mainInner=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,mhTotal,10),shaftWire);
  mainInner.position.y=mhCenter;
  mainShaft.add(mainInner);
- // Elevator ring collars at each deck height
  [3.9, 0.9, -2.2, -5.3, -8.1].forEach(ry=>{
   const collar=new THREE.Mesh(new THREE.TorusGeometry(.96,.035,8,24),pulseLineMat);
   collar.rotation.x=Math.PI/2;
@@ -304,30 +408,93 @@ function createScene(canvas,compact=false){
  });
  sub.add(mainShaft);
 
- // Secondary Elevator & Ventilation Shafts reaching the mountain ridge
+ // ARCHITECTURAL STAIRWELLS & INDEPENDENT EMERGENCY STAIR TOWERS (Visible 3D Zig-Zag Flights!)
+ const stairSteelMat=new THREE.MeshStandardMaterial({color:0x4b6e75,metalness:.65,roughness:.35,transparent:true,opacity:.88});
+ const stairCageMat=new THREE.MeshBasicMaterial({color:0x7ee6b8,wireframe:true,transparent:true,opacity:.24});
+ const stairRailMat=new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.72});
+
+ function buildStairwell(x, z, levels, isEmergency=false){
+  const grp=new THREE.Group();
+  grp.position.set(x,0,z);
+  const cMat=isEmergency?new THREE.MeshBasicMaterial({color:0x7ee6b8,wireframe:true,transparent:true,opacity:.26}):stairCageMat;
+  const rMat=isEmergency?evacLineMat:stairRailMat;
+
+  for(let i=0;i<levels.length-1;i++){
+   const yTop=levels[i]+.08, yBot=levels[i+1]+.08;
+   const dy=yTop-yBot;
+   const yMid=(yTop+yBot)/2;
+
+   // Open structural stairwell frame
+   const cage=new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.18, dy, 1.48)),
+    new THREE.LineBasicMaterial({color:isEmergency?0x7ee6b8:cyan,transparent:true,opacity:.42})
+   );
+   cage.position.y=yMid;
+   grp.add(cage);
+
+   // Intermediate switchback landing platform
+   const landing=new THREE.Mesh(new THREE.BoxGeometry(1.1,.07,.45),stairSteelMat);
+   landing.position.set(0, yMid, -.48);
+   grp.add(landing);
+
+   // Flight 1 (Upper half: top -> intermediate landing) & Flight 2 (Lower half: landing -> bottom)
+   const fLen=Math.hypot(dy/2, .92);
+   const pitch=Math.atan2(dy/2, .92);
+
+   const flight1=new THREE.Mesh(new THREE.BoxGeometry(.42,.08,fLen),stairSteelMat);
+   flight1.position.set(-.26, yTop-dy*.25, .02);
+   flight1.rotation.x=pitch;
+   const rail1=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,fLen),rMat);
+   rail1.position.set(-.26, yTop-dy*.25+.18, .02);
+   rail1.rotation.x=pitch;
+
+   const flight2=new THREE.Mesh(new THREE.BoxGeometry(.42,.08,fLen),stairSteelMat);
+   flight2.position.set(.26, yTop-dy*.75, .02);
+   flight2.rotation.x=-pitch;
+   const rail2=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,fLen),rMat);
+   rail2.position.set(.26, yTop-dy*.75+.18, .02);
+   rail2.rotation.x=-pitch;
+
+   // Individual step treads along both flights for clear visual stair silhouette
+   for(let s=1;s<=4;s++){
+    const t=s/5;
+    const stepA=new THREE.Mesh(new THREE.BoxGeometry(.4,.04,.16),stairSteelMat);
+    stepA.position.set(-.26, yTop-(dy*.5)*t, .44-.88*t);
+    const stepB=new THREE.Mesh(new THREE.BoxGeometry(.4,.04,.16),stairSteelMat);
+    stepB.position.set(.26, yMid-(dy*.5)*t, -.44+.88*t);
+    grp.add(stepA,stepB);
+   }
+   grp.add(flight1,rail1,flight2,rail2);
+  }
+  sub.add(grp);
+ }
+
+ // 4 Strategic Stairwells so personnel move between sectors & levels without using the central elevator:
+ // 1) West Sector Inter-Deck Stairwell (connects Deck 0 -> -1 -> -2 -> -3)
+ buildStairwell(-7.4, -0.8, [3.8, 0.8, -2.3, -5.4], false);
+ // 2) East Sector Inter-Deck Stairwell (connects Deck 0 -> -1 -> -2 -> -3)
+ buildStairwell(7.2, 0.6, [3.8, 0.8, -2.3, -5.4], false);
+ // 3) Southwest Independent Emergency Escape Stair Tower (Deck -1 -> -2 -> -3 -> -4, isolated from central shaft)
+ buildStairwell(-11.8, 4.4, [0.8, -2.3, -5.4, -8.2], true);
+ // 4) Northeast Independent Emergency & Engineering Stair Tower (Deck 0 -> -1 -> -2 -> -3 -> -4)
+ buildStairwell(10.6, -4.6, [3.8, 0.8, -2.3, -5.4, -8.2], true);
+
+ // Concealed Ventilation & Air-Filtration Chimneys (slender ducts only — no extra elevators)
  [
-  {x:-8.8, z:-4.2, top:baseY+mountainHeight(-8.8,-4.2), bot:-5.4, r:.42},
-  {x:8.6,  z:3.6,  top:baseY+mountainHeight(8.6,3.6),   bot:-5.4, r:.42},
-  {x:-5.2, z:4.5,  top:3.9, bot:-8.2, r:.36},
-  {x:6.4,  z:-4.8, top:3.9, bot:-8.2, r:.36}
+  {x:-8.8, z:-4.2, top:baseY+mountainHeight(-8.8,-4.2), bot:-5.4, r:.24},
+  {x:8.6,  z:3.6,  top:baseY+mountainHeight(8.6,3.6),   bot:-5.4, r:.24}
  ].forEach(s=>{
   const h=s.top-s.bot, cy=(s.top+s.bot)/2;
-  const tube=new THREE.Mesh(new THREE.CylinderGeometry(s.r,s.r,h,12,1,true),shaftGlass);
-  tube.position.set(s.x,cy,s.z);
-  const core=new THREE.Mesh(new THREE.CylinderGeometry(s.r*.32,s.r*.32,h,8),shaftWire);
-  core.position.set(s.x,cy,s.z);
-  sub.add(tube,core);
-  if(s.top>baseY-1){
-   // Concealed mountain exhaust vent cap
-   const cap=new THREE.Mesh(new THREE.CylinderGeometry(s.r*1.2,s.r*1.35,.22,14),new THREE.MeshStandardMaterial({color:0x4b5e54,metalness:.55,roughness:.5}));
-   cap.position.set(s.x,s.top+.1,s.z);
-   const ring=new THREE.Mesh(new THREE.TorusGeometry(s.r*1.3,.018,6,24),pulseLineMat);
-   ring.rotation.x=Math.PI/2;
-   ring.position.set(s.x,s.top+.22,s.z);
-   surface.add(cap,ring);
-  }
+  const duct=new THREE.Mesh(new THREE.CylinderGeometry(s.r,s.r,h,10,1,true),shaftWire);
+  duct.position.set(s.x,cy,s.z);
+  sub.add(duct);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(s.r*1.3,s.r*1.5,.2,12),new THREE.MeshStandardMaterial({color:0x4b5e54,metalness:.55,roughness:.5}));
+  cap.position.set(s.x,s.top+.09,s.z);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(s.r*1.4,.016,6,20),pulseLineMat);
+  ring.rotation.x=Math.PI/2;
+  ring.position.set(s.x,s.top+.2,s.z);
+  surface.add(cap,ring);
  });
-
  // 5. ARCHITECTURAL CHAMBERS & INTERACTIVE FACILITY PODS (VARIED SHAPES: OCTAGONAL HUBS, BAYS, DOMES)
  const facilityRecords=[];
  const sectorSpecs=[
