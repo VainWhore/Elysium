@@ -222,7 +222,7 @@ function createScene(canvas,compact=false){
  // Level 0 (Y = 3.8): Upper Command & Intake Wing (ELYSIUM Admin + Entry Airlock Tunnel)
  createOrganicWing([
   [-11,-7],[-3,-8.5],[5,-7.5],[11,-4.5],[12,1.5],[7,5.5],[-1,6.2],[-9,4.5],[-13,-1]
- ], 3.8, .22, 0x95ebe5, .82);
+ ], 3.8, .22, 0xf59e42, .85);
  // Lateral North-East Comm Annex on Level 0
  createOrganicWing([
   [10,-6],[16.5,-7.5],[18.5,-3],[15.5,1.5],[10.5,0]
@@ -513,7 +513,7 @@ function createScene(canvas,compact=false){
  const hitSphereGeo=new THREE.SphereGeometry(.62,12,10);
  const hitSphereMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
  const sectorSpecs=[
-  {key:'elysium',name:'ELYSIUM',color:0x8bd9d2,items:content.facilities.elysium.items},
+  {key:'elysium',name:'ELYSIUM',color:0xf59e42,items:content.facilities.elysium.items},
   {key:'sanctum',name:'SANCTUM',color:0x83dbe8,items:content.facilities.sanctum.items},
   {key:'shelter',name:'THE SHELTER',color:0xa3d8bd,items:content.facilities.shelter.items},
   {key:'shared',name:'INFRAESTRUCTURA COMPARTIDA',color:0x9bb7f0,items:content.facilities.shared.items}
@@ -551,13 +551,16 @@ function createScene(canvas,compact=false){
   pod.position.set(x,y+.02,z);
   sub.add(pod);
 
+  const isRestricted=sector.key==='elysium';
+  const baseDesc=facilityDescriptions[item]||'Instalación interna de Elysium.';
   const data={
    key:sector.key,
-   sector:sector.name,
+   sector:isRestricted?'ELYSIUM · ÁREA RESTRINGIDA (SOLO PERSONAL AUTORIZADO)':sector.name,
    name:item,
-   desc:facilityDescriptions[item]||'Instalación interna de Elysium.',
+   desc:isRestricted ? `${baseDesc} Lugar restringido: solo entra personal autorizado.` : baseDesc,
    id:`${sector.key.toUpperCase()} / ${(idx+1).toString().padStart(2,'0')}`,
-   color:sector.color
+   color:sector.color,
+   restricted:isRestricted
   };
 
   if(shapeType==='hub'){
@@ -752,9 +755,62 @@ const infoMap={
  shelter:{name:'THE SHELTER',id:'SECTOR / 003',desc:content.facilities.shelter.description,items:content.facilities.shelter.items},
  shared:{name:'INFRAESTRUCTURA COMPARTIDA',id:'SYSTEM / 004',desc:content.facilities.shared.description,items:content.facilities.shared.items}
 };
-function showInfo(key,label,facility){const d=facility?{name:facility.name,id:facility.id,desc:facility.desc,items:[]}:(infoMap[key]||infoMap.shared);$('#infoId').textContent=d.id;$('#infoContent').innerHTML=`<div class="info-symbol">⌖</div><h2>${d.name}</h2><p>${d.desc}</p>${d.items.length?`<ul class="facility-list">${d.items.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}<div class="info-hint">${facility?'INSTALACIÓN SELECCIONADA · '+facility.sector:'DISTRIBUCIÓN CONCEPTUAL · CONSULTAR AUTORIZACIÓN DE ACCESO'}</div>`;}
+function showInfo(key,label,facility){
+ const d=facility?{name:facility.name,id:facility.id,desc:facility.desc,items:[],restricted:facility.restricted,sector:facility.sector}:(infoMap[key]||infoMap.shared);
+ const isElysium=key==='elysium'||d.restricted;
+ const extraNotice=isElysium?'<div class="info-restricted">⚠ LUGAR RESTRINGIDO — SOLO ENTRA PERSONAL AUTORIZADO</div>':'';
+ $('#infoId').textContent=d.id;
+ $('#infoContent').innerHTML=`<div class="info-symbol"${isElysium?' style="border-color:rgba(245,158,66,.55);color:#f59e42"':''}>⌖</div><h2>${d.name}</h2><p>${d.desc}</p>${extraNotice}${d.items.length?`<ul class="facility-list">${d.items.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}<div class="info-hint">${facility?'INSTALACIÓN SELECCIONADA · '+facility.sector:'DISTRIBUCIÓN CONCEPTUAL · CONSULTAR AUTORIZACIÓN DE ACCESO'}</div>`;
+}
 let mainScene,homeScene;
 try{mainScene=createScene($('#mainCanvas'));homeScene=createScene($('#homeCanvas'),true);$('#sceneLoading').classList.add('hidden');setTimeout(()=>$('#sceneLoading')?.remove(),700)}catch(e){console.error(e);$('#sceneLoading').textContent='NO SE PUDO INICIAR EL MOTOR 3D. VERIFICÁ LA CONEXIÓN.'}
 $$('.layer-btn').forEach(b=>b.addEventListener('click',()=>{$$('.layer-btn').forEach(x=>x.classList.toggle('active',x===b));mainScene?.setLayer(b.dataset.layer);homeScene?.setLayer(b.dataset.layer)}));
 $('#resetView').addEventListener('click',()=>{mainScene?.setLayer('both');homeScene?.setLayer('both');$$('.layer-btn').forEach(x=>x.classList.toggle('active',x.dataset.layer==='both'))});
 $('#toggleLabels').addEventListener('click',e=>{e.currentTarget.classList.toggle('selected');const v=e.currentTarget.classList.contains('selected');mainScene?.setLabels(v);homeScene?.setLabels(v)});
+
+// Regional map pins (ONLY Elysium and Nexus) + external distance measurement tool
+(()=>{
+ const geoData={
+  elysium:{
+   kicker:'UBICACIÓN / BOSQUE EXTERIOR',
+   title:'Elysium',
+   desc:'Refugio subterráneo oculto y autosuficiente en el macizo boscoso, a 85 km del límite de la ciudad.',
+   metric:'DISTANCIA AL LÍMITE URBANO: 85 KM'
+  },
+  nexus:{
+   kicker:'NÚCLEO URBANO / RED EXTERNA',
+   title:'Nexus',
+   desc:'Infraestructura corporativa y red central situada en el núcleo urbano junto al río y la costa.',
+   metric:'DISTANCIA DESDE ELYSIUM: 85 KM AL LÍMITE · 112.4 KM AL NÚCLEO'
+  }
+ };
+ const card=$('#geoCard'), closeBtn=$('#geoCardClose');
+ const showGeo=(key)=>{
+  const d=geoData[key]; if(!d||!card)return;
+  $('#geoKicker').textContent=d.kicker;
+  $('#geoTitle').textContent=d.title;
+  $('#geoDesc').textContent=d.desc;
+  $('#geoMetric').textContent=d.metric;
+  $$('.geo-pin').forEach(p=>p.classList.toggle('active',p.dataset.geo===key));
+  card.classList.add('open');
+ };
+ $$('.geo-pin').forEach(pin=>{
+  pin.addEventListener('click',e=>{e.stopPropagation();showGeo(pin.dataset.geo)});
+ });
+ closeBtn?.addEventListener('click',()=>{card.classList.remove('open');$$('.geo-pin').forEach(p=>p.classList.remove('active'))});
+
+ const routeBtn=$('#toggleRouteLine'), beam=$('#routeBeam');
+ routeBtn?.addEventListener('click',()=>{
+  routeBtn.classList.toggle('active');
+  beam?.classList.toggle('visible',routeBtn.classList.contains('active'));
+ });
+
+ const distBtn=$('#openDistanceTool'), inspector=$('#distanceInspector');
+ distBtn?.addEventListener('click',()=>{
+  distBtn.classList.toggle('active');
+  inspector?.classList.toggle('highlighted',distBtn.classList.contains('active'));
+  beam?.classList.add('visible');
+  routeBtn?.classList.add('active');
+  if(!card?.classList.contains('open'))showGeo('elysium');
+ });
+})();

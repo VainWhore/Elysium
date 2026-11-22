@@ -37,6 +37,42 @@
    <div class="map-home-wrap"><div class="map-heading"><div><span class="eyebrow">CARTOGRAFÍA HOLOGRÁFICA</span><h2>SUPERFICIE / SUBSUELO</h2></div><span class="live-tag"><i></i> LIVE MODEL</span></div><div class="scene-frame compact"><canvas id="homeCanvas"></canvas><div class="scene-overlay"><span>LAT. RESTRINGIDA</span><span>85 KM / CITY LIMIT</span><span>2076 — ELYSIUM</span></div><button class="expand-map" data-open="map">ABRIR MAPA COMPLETO ↗</button></div><div class="map-legend"><span><i class="legend-forest"></i> SUPERFICIE BOSCOSA</span><span><i class="legend-structure"></i> ESTRUCTURA SUBTERRÁNEA</span><span><i class="legend-route"></i> CONEXIONES</span></div></div>
    <div class="overview-grid"><article class="overview-card"><span class="card-kicker">01 / LOCALIZACIÓN</span><strong>85 <small>KM</small></strong><p>Distancia aproximada entre Elysium y el límite de la ciudad más cercana.</p></article><article class="overview-card"><span class="card-kicker">02 / ORGANIZACIÓN</span><strong>03 <small>ÁREAS</small></strong><p>Una administración central y dos sectores con prioridades distintas.</p></article><article class="overview-card"><span class="card-kicker">03 / ESTADO</span><strong>2076</strong><p>Una comunidad estable, independiente en sus sistemas y todavía vinculada a la superficie.</p></article></div>
    <div class="home-note"><span class="note-mark">✳</span><p>Elysium no existe porque el mundo haya terminado. Existe porque, para una parte de la población, continuar viviendo dentro de él dejó de ser una opción segura.</p></div>
+   <div class="regional-wrap" id="regionalMapSection">
+    <div class="map-heading">
+     <div><span class="eyebrow">CARTOGRAFÍA REGIONAL / DISTANCIA EXTERIOR</span><h2>PERÍMETRO · ELYSIUM / NEXUS</h2></div>
+     <div class="regional-tools">
+      <button type="button" class="regional-tool-btn active" id="toggleRouteLine">TRAZAR RUTA</button>
+      <button type="button" class="regional-tool-btn" id="openDistanceTool">MEDIR DISTANCIA</button>
+     </div>
+    </div>
+    <div class="regional-stage" id="regionalStage">
+     <img src="regional-map.webp" alt="Mapa regional de Elysium y Nexus" class="regional-img" loading="lazy">
+     <svg class="regional-svg" id="regionalSvg" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="132.8" y1="350.5" x2="596.7" y2="224.2" class="route-line visible" id="routeBeam"></line>
+      <circle cx="132.8" cy="350.5" r="14" class="route-pulse"></circle>
+      <circle cx="596.7" cy="224.2" r="14" class="route-pulse"></circle>
+     </svg>
+     <button type="button" class="geo-pin pin-elysium" data-geo="elysium" style="left:13.28%;top:62.59%" aria-label="Ubicación Elysium">
+      <span class="geo-ring"></span><span class="geo-dot"></span>
+     </button>
+     <button type="button" class="geo-pin pin-nexus" data-geo="nexus" style="left:59.67%;top:40.03%" aria-label="Ubicación Nexus">
+      <span class="geo-ring"></span><span class="geo-dot"></span>
+     </button>
+     <div class="geo-card" id="geoCard" role="region" aria-live="polite">
+      <button type="button" class="geo-card-close" id="geoCardClose" aria-label="Cerrar">×</button>
+      <span class="geo-kicker" id="geoKicker">PUNTO SELECCIONADO</span>
+      <h3 id="geoTitle">Elysium</h3>
+      <p id="geoDesc">Refugio subterráneo independiente oculto en la zona boscosa, a 85 km del límite urbano y fuera de la red de Nexus.</p>
+      <div class="geo-metric" id="geoMetric">DISTANCIA AL LÍMITE URBANO: 85 KM</div>
+     </div>
+    </div>
+    <div class="distance-inspector" id="distanceInspector">
+     <div class="dist-stat"><span>ORIGEN</span><strong>ELYSIUM</strong></div>
+     <div class="dist-stat"><span>DESTINO</span><strong>NEXUS</strong></div>
+     <div class="dist-stat"><span>LÍMITE URBANO</span><strong>85 KM</strong></div>
+     <div class="dist-stat"><span>TRAYECTO DIRECTO</span><strong id="directDistValue">112.4 KM</strong></div>
+    </div>
+   </div>
   </section>
   <section class="view" id="view-map">
    <div class="page-head"><div><div class="eyebrow">CARTOGRAFÍA / EXPLORACIÓN INTERACTIVA</div><h1>El complejo <em>en capas.</em></h1><p>La superficie y el subsuelo forman parte de un mismo modelo. Girá la proyección, acercate y seleccioná las zonas para consultar sus registros.</p></div><div class="page-code">MAP / 001<br>MODEL: 3D</div></div>
