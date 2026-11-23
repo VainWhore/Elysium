@@ -46,3 +46,12 @@
 .dist-stat span{display:block;font:7px var(--mono);letter-spacing:.12em;color:#6f8f92}
 .dist-stat strong{display:block;margin-top:4px;font:500 13px var(--mono);color:#d8f2ef}
 @media(max-width:760px){.distance-inspector{grid-template-columns:repeat(2,1fr)}.regional-img{max-height:300px}}
+
+.route-line.seg-city{stroke:#f59e42;stroke-width:2.5;stroke-dasharray:6 4}
+.route-line.seg-nexus{stroke:#78dce0;stroke-width:2.5;stroke-dasharray:6 4}
+.edge-node{fill:#ffbe76;stroke:#071116;stroke-width:1.4}
+.dist-badge{position:absolute;z-index:3;transform:translate(-50%,-50%);padding:3px 7px;border-radius:4px;background:rgba(6,17,22,.88);backdrop-filter:blur(8px);font:700 8px var(--mono);letter-spacing:.06em;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s}
+.dist-badge.visible{opacity:.96}
+.badge-city{border:1px solid rgba(245,158,66,.55);color:#ffbe76}
+.badge-nexus{border:1px solid rgba(120,220,224,.55);color:#9bf5f2}
+@media(max-width:760px){.dist-badge{font-size:6.5px;padding:2px 5px}}

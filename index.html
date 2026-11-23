@@ -41,36 +41,45 @@
     <div class="map-heading">
      <div><span class="eyebrow">CARTOGRAFÍA REGIONAL / DISTANCIA EXTERIOR</span><h2>PERÍMETRO · ELYSIUM / NEXUS</h2></div>
      <div class="regional-tools">
-      <button type="button" class="regional-tool-btn active" id="toggleRouteLine">TRAZAR RUTA</button>
+      <button type="button" class="regional-tool-btn active" id="toggleRouteLine">LÍNEAS DE DISTANCIA</button>
       <button type="button" class="regional-tool-btn" id="openDistanceTool">MEDIR DISTANCIA</button>
      </div>
     </div>
     <div class="regional-stage" id="regionalStage">
      <img src="regional-map.webp" alt="Mapa regional de Elysium y Nexus" class="regional-img" loading="lazy">
      <svg class="regional-svg" id="regionalSvg" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
-      <line x1="132.8" y1="350.5" x2="596.7" y2="224.2" class="route-line visible" id="routeBeam"></line>
-      <circle cx="132.8" cy="350.5" r="14" class="route-pulse"></circle>
-      <circle cx="596.7" cy="224.2" r="14" class="route-pulse"></circle>
+      <!-- Línea 1: Elysium -> Orilla de la ciudad (85 km de distancia) -->
+      <line x1="216.6" y1="424.2" x2="422.0" y2="314.0" class="route-line seg-city visible" id="routeCityEdge"></line>
+      <!-- Línea 2: Orilla de la ciudad -> Nexus (34 km de distancia) -->
+      <line x1="422.0" y1="314.0" x2="597.0" y2="220.1" class="route-line seg-nexus visible" id="routeToNexus"></line>
+      <!-- Marcador de orilla de la ciudad -->
+      <circle cx="422.0" cy="314.0" r="4.5" class="edge-node"></circle>
+      <circle cx="216.6" cy="424.2" r="13" class="route-pulse"></circle>
+      <circle cx="597.0" cy="220.1" r="13" class="route-pulse"></circle>
      </svg>
-     <button type="button" class="geo-pin pin-elysium" data-geo="elysium" style="left:13.28%;top:62.59%" aria-label="Ubicación Elysium">
+     <span class="dist-badge badge-city visible" id="badgeCity" style="left:31.93%;top:63.23%">85 km de distancia</span>
+     <span class="dist-badge badge-nexus visible" id="badgeNexus" style="left:50.95%;top:45.00%">34 km de distancia</span>
+
+     <button type="button" class="geo-pin pin-elysium" data-geo="elysium" style="left:21.66%;top:75.75%" aria-label="Ubicación Elysium">
       <span class="geo-ring"></span><span class="geo-dot"></span>
      </button>
-     <button type="button" class="geo-pin pin-nexus" data-geo="nexus" style="left:59.67%;top:40.03%" aria-label="Ubicación Nexus">
+     <button type="button" class="geo-pin pin-nexus" data-geo="nexus" style="left:59.70%;top:39.30%" aria-label="Ubicación Nexus">
       <span class="geo-ring"></span><span class="geo-dot"></span>
      </button>
+
      <div class="geo-card" id="geoCard" role="region" aria-live="polite">
       <button type="button" class="geo-card-close" id="geoCardClose" aria-label="Cerrar">×</button>
       <span class="geo-kicker" id="geoKicker">PUNTO SELECCIONADO</span>
       <h3 id="geoTitle">Elysium</h3>
-      <p id="geoDesc">Refugio subterráneo independiente oculto en la zona boscosa, a 85 km del límite urbano y fuera de la red de Nexus.</p>
-      <div class="geo-metric" id="geoMetric">DISTANCIA AL LÍMITE URBANO: 85 KM</div>
+      <p id="geoDesc">Refugio subterráneo oculto en el bosque, a 85 km de la orilla de la ciudad y fuera del alcance de Nexus.</p>
+      <div class="geo-metric" id="geoMetric">85 KM DE DISTANCIA A LA ORILLA DE LA CIUDAD</div>
      </div>
     </div>
     <div class="distance-inspector" id="distanceInspector">
-     <div class="dist-stat"><span>ORIGEN</span><strong>ELYSIUM</strong></div>
-     <div class="dist-stat"><span>DESTINO</span><strong>NEXUS</strong></div>
-     <div class="dist-stat"><span>LÍMITE URBANO</span><strong>85 KM</strong></div>
-     <div class="dist-stat"><span>TRAYECTO DIRECTO</span><strong id="directDistValue">112.4 KM</strong></div>
+     <div class="dist-stat"><span>ORILLA DE LA CIUDAD</span><strong>85 KM DE DISTANCIA</strong></div>
+     <div class="dist-stat"><span>HASTA NEXUS</span><strong>34 KM DE DISTANCIA</strong></div>
+     <div class="dist-stat"><span>RECORRIDO TOTAL</span><strong>119 KM</strong></div>
+     <div class="dist-stat"><span>PUNTOS</span><strong>ELSYIUM · NEXUS</strong></div>
     </div>
    </div>
   </section>

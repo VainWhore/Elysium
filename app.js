@@ -768,20 +768,20 @@ $$('.layer-btn').forEach(b=>b.addEventListener('click',()=>{$$('.layer-btn').for
 $('#resetView').addEventListener('click',()=>{mainScene?.setLayer('both');homeScene?.setLayer('both');$$('.layer-btn').forEach(x=>x.classList.toggle('active',x.dataset.layer==='both'))});
 $('#toggleLabels').addEventListener('click',e=>{e.currentTarget.classList.toggle('selected');const v=e.currentTarget.classList.contains('selected');mainScene?.setLabels(v);homeScene?.setLabels(v)});
 
-// Regional map pins (ONLY Elysium and Nexus) + external distance measurement tool
+// Regional map pins (ONLY Elysium and Nexus) + two-segment distance lines
 (()=>{
  const geoData={
   elysium:{
-   kicker:'UBICACIÓN / BOSQUE EXTERIOR',
+   kicker:'UBICACIÓN / BOSQUE',
    title:'Elysium',
-   desc:'Refugio subterráneo oculto y autosuficiente en el macizo boscoso, a 85 km del límite de la ciudad.',
-   metric:'DISTANCIA AL LÍMITE URBANO: 85 KM'
+   desc:'Refugio subterráneo oculto en el bosque, a 85 km de la orilla de la ciudad.',
+   metric:'85 KM DE DISTANCIA A LA ORILLA · +34 KM A NEXUS'
   },
   nexus:{
    kicker:'NÚCLEO URBANO / RED EXTERNA',
    title:'Nexus',
-   desc:'Infraestructura corporativa y red central situada en el núcleo urbano junto al río y la costa.',
-   metric:'DISTANCIA DESDE ELYSIUM: 85 KM AL LÍMITE · 112.4 KM AL NÚCLEO'
+   desc:'Edificio y red central en el interior de la ciudad, a 34 km desde la orilla urbana.',
+   metric:'34 KM DE DISTANCIA DESDE LA ORILLA · 119 KM TOTAL'
   }
  };
  const card=$('#geoCard'), closeBtn=$('#geoCardClose');
@@ -799,17 +799,20 @@ $('#toggleLabels').addEventListener('click',e=>{e.currentTarget.classList.toggle
  });
  closeBtn?.addEventListener('click',()=>{card.classList.remove('open');$$('.geo-pin').forEach(p=>p.classList.remove('active'))});
 
- const routeBtn=$('#toggleRouteLine'), beam=$('#routeBeam');
+ const routeBtn=$('#toggleRouteLine'), lines=$$('.route-line'), badges=$$('.dist-badge');
  routeBtn?.addEventListener('click',()=>{
   routeBtn.classList.toggle('active');
-  beam?.classList.toggle('visible',routeBtn.classList.contains('active'));
+  const show=routeBtn.classList.contains('active');
+  lines.forEach(l=>l.classList.toggle('visible',show));
+  badges.forEach(b=>b.classList.toggle('visible',show));
  });
 
  const distBtn=$('#openDistanceTool'), inspector=$('#distanceInspector');
  distBtn?.addEventListener('click',()=>{
   distBtn.classList.toggle('active');
   inspector?.classList.toggle('highlighted',distBtn.classList.contains('active'));
-  beam?.classList.add('visible');
+  lines.forEach(l=>l.classList.add('visible'));
+  badges.forEach(b=>b.classList.add('visible'));
   routeBtn?.classList.add('active');
   if(!card?.classList.contains('open'))showGeo('elysium');
  });
