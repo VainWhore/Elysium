@@ -47,15 +47,15 @@
     </div>
     <div class="regional-stage" id="regionalStage">
      <img src="regional-map.webp" alt="Mapa regional de Elysium y Nexus" class="regional-img" loading="lazy">
-     <svg class="regional-svg" id="regionalSvg" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true">
+     <svg class="regional-svg" id="regionalSvg" viewBox="0 0 1000 562.5" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <!-- Línea 1: Elysium -> Orilla de la ciudad (85 km de distancia) -->
-      <line x1="216.6" y1="424.2" x2="422.0" y2="314.0" class="route-line seg-city visible" id="routeCityEdge"></line>
+      <line x1="216.6" y1="426.1" x2="422.0" y2="315.4" class="route-line seg-city visible" id="routeCityEdge"></line>
       <!-- Línea 2: Orilla de la ciudad -> Nexus (34 km de distancia) -->
-      <line x1="422.0" y1="314.0" x2="597.0" y2="220.1" class="route-line seg-nexus visible" id="routeToNexus"></line>
+      <line x1="422.0" y1="315.4" x2="597.0" y2="221.1" class="route-line seg-nexus visible" id="routeToNexus"></line>
       <!-- Marcador de orilla de la ciudad -->
-      <circle cx="422.0" cy="314.0" r="4.5" class="edge-node"></circle>
-      <circle cx="216.6" cy="424.2" r="13" class="route-pulse"></circle>
-      <circle cx="597.0" cy="220.1" r="13" class="route-pulse"></circle>
+      <circle cx="422.0" cy="315.4" r="4.5" class="edge-node"></circle>
+      <circle cx="216.6" cy="426.1" r="13" class="route-pulse"></circle>
+      <circle cx="597.0" cy="221.1" r="13" class="route-pulse"></circle>
      </svg>
      <span class="dist-badge badge-city visible" id="badgeCity" style="left:31.93%;top:63.23%">85 km de distancia</span>
      <span class="dist-badge badge-nexus visible" id="badgeNexus" style="left:50.95%;top:45.00%">34 km de distancia</span>
@@ -85,7 +85,25 @@
   </section>
   <section class="view" id="view-map">
    <div class="page-head"><div><div class="eyebrow">CARTOGRAFÍA / EXPLORACIÓN INTERACTIVA</div><h1>El complejo <em>en capas.</em></h1><p>La superficie y el subsuelo forman parte de un mismo modelo. Girá la proyección, acercate y seleccioná las zonas para consultar sus registros.</p></div><div class="page-code">MAP / 001<br>MODEL: 3D</div></div>
-   <div class="map-toolbar"><div class="layer-switch"><button class="layer-btn active" data-layer="both">VISTA COMPLETA</button><button class="layer-btn" data-layer="surface">SUPERFICIE</button><button class="layer-btn" data-layer="bunker">SUBSUELO</button></div><div class="map-tools"><button id="resetView" title="Restablecer vista">⟲ <span>REINICIAR</span></button><button id="toggleLabels" class="selected" title="Mostrar retícula y contornos">⌗ <span>RETÍCULA</span></button></div></div>
+   <div class="map-toolbar">
+    <div class="layer-switch">
+     <button class="layer-btn active" data-layer="both">VISTA COMPLETA</button>
+     <button class="layer-btn" data-layer="surface">SUPERFICIE</button>
+     <button class="layer-btn" data-layer="bunker">SUBSUELO</button>
+    </div>
+    <div class="sector-filter-bar" role="group" aria-label="Filtrar instalaciones por sector">
+     <button class="filter-chip active" data-filter="all">TODOS</button>
+     <button class="filter-chip chip-elysium" data-filter="elysium">ELYSIUM · RESTRINGIDO</button>
+     <button class="filter-chip chip-sanctum" data-filter="sanctum">SANCTUM</button>
+     <button class="filter-chip chip-shelter" data-filter="shelter">THE SHELTER</button>
+     <button class="filter-chip chip-shared" data-filter="shared">SOPORTE</button>
+     <button class="filter-chip chip-evac" data-filter="evac">EVACUACIÓN</button>
+    </div>
+    <div class="map-tools">
+     <button id="resetView" title="Restablecer vista">⟲ <span>REINICIAR</span></button>
+     <button id="toggleLabels" class="selected" title="Mostrar retícula y contornos">⌗ <span>RETÍCULA</span></button>
+    </div>
+   </div>
    <div class="map-layout"><div class="scene-frame full"><canvas id="mainCanvas"></canvas><div class="scene-hud hud-top"><span><i class="status-dot"></i> SCAN COMPLETE</span><span>INTERACTIVE TERRAIN MODEL</span></div><div class="scene-hud hud-bottom"><span>ARRASTRAR · ROTAR</span><span>RUEDA / PINZA · ZOOM</span><span>TOCAR · INSPECCIONAR</span></div><div class="scene-crosshair">+</div><div class="scene-loading" id="sceneLoading">INICIALIZANDO CARTOGRAFÍA...</div></div>
     <aside class="map-info"><div class="info-top"><span class="eyebrow">REGISTRO SELECCIONADO</span><span class="info-id" id="infoId">SYS / 000</span></div><div class="info-content" id="infoContent"><div class="info-symbol">⌖</div><h2>Explorá el complejo</h2><p>Seleccioná una zona del modelo para consultar su función y los espacios asociados.</p><div class="info-hint">NO TODAS LAS ÁREAS SON DE ACCESO PÚBLICO.</div></div><div class="info-bottom"><span>ELYSIUM INTERNAL MAP</span><span>REV. 07.6</span></div></aside></div>
    <div class="map-footnote"><span>NOTA CARTOGRÁFICA</span><p>La representación es conceptual, no está a escala y no constituye un plano arquitectónico definitivo. La posición exacta de accesos, instalaciones y niveles se ajustará cuando quede establecida en el lore.</p></div>

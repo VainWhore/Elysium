@@ -257,20 +257,26 @@ function createScene(canvas,compact=false){
  ], -8.2, .22, 0x7ba4e3, .72);
 
  // 3. CURVED TUNNELS, SERVICE CORRIDORS, BLAST AIRLOCKS & MULTIPLE SURFACE EXITS
+ const tunnelRecords=[];
+ const stairRecords=[];
  const tunnelMat=new THREE.MeshStandardMaterial({color:0x365c63,metalness:.58,roughness:.38,transparent:true,opacity:.52});
  const serviceTunnelMat=new THREE.MeshStandardMaterial({color:0x4b4238,metalness:.62,roughness:.44,transparent:true,opacity:.58});
  const evacTunnelMat=new THREE.MeshStandardMaterial({color:0x2b4e4c,metalness:.52,roughness:.36,transparent:true,opacity:.54});
- const pulseLineMat=new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.8});
- const serviceLineMat=new THREE.MeshBasicMaterial({color:0xe2b979,transparent:true,opacity:.78});
- const evacLineMat=new THREE.MeshBasicMaterial({color:0x7ee6b8,transparent:true,opacity:.82});
+ const pulseLineMat=new THREE.MeshBasicMaterial({color:cyan,transparent:true,opacity:.72});
+ const serviceLineMat=new THREE.MeshBasicMaterial({color:0xe2b979,transparent:true,opacity:.72});
+ const evacLineMat=new THREE.MeshBasicMaterial({color:0x7ee6b8,transparent:true,opacity:.76});
 
  function buildTunnel(pts, radius=.24, kind='main'){
-  const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],p[1],p[2])));
-  const mat=kind==='service'?serviceTunnelMat:(kind==='evac'?evacTunnelMat:tunnelMat);
-  const lMat=kind==='service'?serviceLineMat:(kind==='evac'?evacLineMat:pulseLineMat);
+  const vecPts=pts.map(p=>new THREE.Vector3(p[0],p[1],p[2]));
+  const curve=new THREE.CatmullRomCurve3(vecPts);
+  const baseMat=kind==='service'?serviceTunnelMat:(kind==='evac'?evacTunnelMat:tunnelMat);
+  const baseLMat=kind==='service'?serviceLineMat:(kind==='evac'?evacLineMat:pulseLineMat);
+  const mat=baseMat.clone();
+  const lMat=baseLMat.clone();
   const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,64,radius,14,false),mat);
-  const rail=new THREE.Mesh(new THREE.TubeGeometry(curve,64,.018,8,false),lMat);
+  const rail=new THREE.Mesh(new THREE.TubeGeometry(curve,64,.02,8,false),lMat);
   sub.add(tube,rail);
+  const ribs=[];
   [0.02,0.25,0.5,0.75,0.98].forEach((t,idx)=>{
    const pos=curve.getPoint(t);
    const tan=curve.getTangent(t);
@@ -279,7 +285,11 @@ function createScene(canvas,compact=false){
    rib.position.copy(pos);
    rib.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),tan);
    sub.add(rib);
+   ribs.push(rib);
   });
+  const samplePts=[];
+  for(let s=0;s<=12;s++) samplePts.push(curve.getPoint(s/12));
+  tunnelRecords.push({kind,mat,lMat,baseOp:baseMat.opacity,baseLineOp:baseLMat.opacity,samplePts,rail,ribs});
  }
 
  // Helper for restricted blast-door airlock gates between sectors and service corridors
@@ -479,6 +489,7 @@ function createScene(canvas,compact=false){
    grp.add(flight1,rail1,flight2,rail2);
   }
   sub.add(grp);
+  stairRecords.push({x,z,levels,isEmergency,grp});
  }
 
  // 4 Strategic Stairwells so personnel move between sectors & levels without using the central elevator:
@@ -622,7 +633,7 @@ function createScene(canvas,compact=false){
   [beacon,orb,halo,hitSphere].forEach(obj=>{obj.userData={facility:data}});
   pod.traverse(child=>{if(child.isMesh && !child.userData?.facility) child.userData={facility:data};});
   hitTargets.push(hitSphere,orb,halo);
-  facilityRecords.push({beacon,orb,halo,data});
+  facilityRecords.push({pod,beacon,orb,halo,data,pos:new THREE.Vector3(x,y+.2,z)});
   return pod;
  }
 
@@ -656,7 +667,7 @@ function createScene(canvas,compact=false){
   popup.className='facility-popup';
   popup.innerHTML='<button class="popup-close" aria-label="Cerrar">×</button><span class="popup-kicker">INSTALLATION / SELECTED</span><small class="popup-id"></small><h3></h3><p></p><span class="popup-sector"></span>';
   frame.append(popup);
-  popup.querySelector('.popup-close').addEventListener('click',()=>popup.classList.remove('visible'));
+  popup.querySelector('.popup-close').addEventListener('click',()=>{popup.classList.remove('visible');selected=null;resetHighlights();});
  }
  const raycaster=new THREE.Raycaster(), pointer=new THREE.Vector2();
  let layer='both', labels=true, selected=null;
@@ -669,14 +680,67 @@ function createScene(canvas,compact=false){
   popup.style.left=`${Math.max(14,Math.min(rect.width-260,x+15))}px`;
   popup.style.top=`${Math.max(48,Math.min(rect.height-160,y-20))}px`;
  }
+ function resetHighlights(){
+  tunnelRecords.forEach(tr=>{
+   tr.mat.opacity=tr.baseOp;
+   tr.lMat.opacity=tr.baseLineOp;
+   tr.rail.scale.set(1,1,1);
+  });
+  stairRecords.forEach(sr=>{
+   sr.grp.scale.set(1,1,1);
+   sr.grp.traverse(c=>{if(c.material)c.material.opacity=c.isLineSegments?.42:.88;});
+  });
+ }
+
+ function highlightConnectedRoutes(rec){
+  resetHighlights();
+  if(!rec)return;
+  const p=rec.pos;
+  // Dim non-connected corridors slightly and illuminate nearest corridors + nearest stairwell + nearest evac route
+  let bestStair=null, bestStairDist=1e9;
+  stairRecords.forEach(sr=>{
+   const inLevelRange=(p.y<=Math.max(...sr.levels)+1.2 && p.y>=Math.min(...sr.levels)-1.2);
+   const d=Math.hypot(sr.x-p.x,sr.z-p.z)+(inLevelRange?0:8);
+   if(d<bestStairDist){bestStairDist=d;bestStair=sr;}
+  });
+
+  tunnelRecords.forEach(tr=>{
+   let minDist=1e9;
+   for(const sp of tr.samplePts){
+    const d=sp.distanceTo(p);
+    if(d<minDist)minDist=d;
+   }
+   const isConnected=(minDist<5.4);
+   const isNearestEvac=(tr.kind==='evac' && minDist<9.2);
+   if(isConnected || isNearestEvac){
+    tr.mat.opacity=Math.min(.92,tr.baseOp+.32);
+    tr.lMat.opacity=1.0;
+    tr.rail.scale.set(1.45,1.45,1.45);
+   } else {
+    tr.mat.opacity=tr.baseOp*.42;
+    tr.lMat.opacity=tr.baseLineOp*.35;
+   }
+  });
+
+  stairRecords.forEach(sr=>{
+   const isNearest=(sr===bestStair);
+   sr.grp.scale.set(isNearest?1.12:1,1,isNearest?1.12:1);
+   sr.grp.traverse(c=>{
+    if(c.material) c.material.opacity=isNearest?1.0:(c.isLineSegments?.22:.48);
+   });
+  });
+ }
+
  function selectFacility(data,beacon){
-  selected={data,beacon};
+  const rec=facilityRecords.find(r=>r.data===data)||facilityRecords.find(r=>r.beacon===beacon);
+  selected={data,beacon:rec?.beacon||beacon};
   popup.querySelector('.popup-id').textContent=data.id;
   popup.querySelector('h3').textContent=data.name;
   popup.querySelector('p').textContent=data.desc;
   popup.querySelector('.popup-sector').textContent=data.sector+'  /  ELYSIUM';
   popup.classList.add('visible');
   updatePopup();
+  highlightConnectedRoutes(rec);
   if(typeof showInfo==='function')showInfo(data.key,data.name,data);
  }
  function pickFacility(ev){
@@ -704,6 +768,8 @@ function createScene(canvas,compact=false){
    selectFacility(found.data,found.beacon);
   } else {
    popup.classList.remove('visible');
+   selected=null;
+   resetHighlights();
   }
  }
  let down=null;
@@ -746,7 +812,49 @@ function createScene(canvas,compact=false){
   controls.update();
   popup.classList.remove('visible');
  }
- return {setLayer,reset:()=>setLayer(layer),setLabels:v=>{labels=v;scan.visible=v;contourGroup.visible=v;},dispose:()=>{cancelAnimationFrame(rafId);ro.disconnect();renderer.dispose()}};
+ function setFilter(fKey){
+  selected=null;
+  popup.classList.remove('visible');
+  resetHighlights();
+  if(fKey==='all'){
+   facilityRecords.forEach(r=>{
+    r.pod.visible=true;
+    r.beacon.scale.set(1,1,1);
+    r.pod.traverse(c=>{if(c.material && c.material!==hitSphereMat)c.material.opacity=.88;});
+   });
+   return;
+  }
+  if(fKey==='evac'){
+   // Highlight all emergency exits, evac tunnels, and emergency stair towers
+   facilityRecords.forEach(r=>{
+    r.beacon.scale.set(.75,.75,.75);
+    r.pod.traverse(c=>{if(c.material && c.material!==hitSphereMat)c.material.opacity=.28;});
+   });
+   tunnelRecords.forEach(tr=>{
+    const isEvac=(tr.kind==='evac'||tr.kind==='service');
+    tr.mat.opacity=isEvac?.88:.18;
+    tr.lMat.opacity=isEvac?1.0:.18;
+    tr.rail.scale.set(isEvac?1.5:1,isEvac?1.5:1,isEvac?1.5:1);
+   });
+   stairRecords.forEach(sr=>{
+    sr.grp.scale.set(sr.isEmergency?1.16:1,1,sr.isEmergency?1.16:1);
+    sr.grp.traverse(c=>{if(c.material)c.material.opacity=sr.isEmergency?1.0:.22;});
+   });
+   return;
+  }
+  // Sector filter: 'elysium', 'sanctum', 'shelter', or 'shared'
+  facilityRecords.forEach(r=>{
+   const match=(r.data.key===fKey);
+   r.beacon.scale.set(match?1.25:.72,match?1.25:.72,match?1.25:.72);
+   r.pod.traverse(c=>{
+    if(c.material && c.material!==hitSphereMat){
+     c.material.opacity=match?.95:.22;
+    }
+   });
+  });
+  if(typeof showInfo==='function')showInfo(fKey);
+ }
+ return {setLayer,setFilter,reset:()=>{setLayer(layer);setFilter('all');},setLabels:v=>{labels=v;scan.visible=v;contourGroup.visible=v;},dispose:()=>{cancelAnimationFrame(rafId);ro.disconnect();renderer.dispose()}};
 }
 
 const infoMap={
@@ -765,7 +873,16 @@ function showInfo(key,label,facility){
 let mainScene,homeScene;
 try{mainScene=createScene($('#mainCanvas'));homeScene=createScene($('#homeCanvas'),true);$('#sceneLoading').classList.add('hidden');setTimeout(()=>$('#sceneLoading')?.remove(),700)}catch(e){console.error(e);$('#sceneLoading').textContent='NO SE PUDO INICIAR EL MOTOR 3D. VERIFICÁ LA CONEXIÓN.'}
 $$('.layer-btn').forEach(b=>b.addEventListener('click',()=>{$$('.layer-btn').forEach(x=>x.classList.toggle('active',x===b));mainScene?.setLayer(b.dataset.layer);homeScene?.setLayer(b.dataset.layer)}));
-$('#resetView').addEventListener('click',()=>{mainScene?.setLayer('both');homeScene?.setLayer('both');$$('.layer-btn').forEach(x=>x.classList.toggle('active',x.dataset.layer==='both'))});
+$$('.filter-chip').forEach(chip=>chip.addEventListener('click',()=>{
+ $$('.filter-chip').forEach(c=>c.classList.toggle('active',c===chip));
+ mainScene?.setFilter(chip.dataset.filter);
+}));
+$('#resetView').addEventListener('click',()=>{
+ mainScene?.setLayer('both');homeScene?.setLayer('both');
+ mainScene?.setFilter('all');
+ $$('.layer-btn').forEach(x=>x.classList.toggle('active',x.dataset.layer==='both'));
+ $$('.filter-chip').forEach(c=>c.classList.toggle('active',c.dataset.filter==='all'));
+});
 $('#toggleLabels').addEventListener('click',e=>{e.currentTarget.classList.toggle('selected');const v=e.currentTarget.classList.contains('selected');mainScene?.setLabels(v);homeScene?.setLabels(v)});
 
 // Regional map pins (ONLY Elysium and Nexus) + two-segment distance lines
